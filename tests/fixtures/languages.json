@@ -1,0 +1,8 @@
+[
+  {"code": "spa", "name": "Spanish"},
+  {"code": "cat", "name": "Catalan"},
+  {"code": "fra", "name": "French"},
+  {"code": "eng", "name": "English"},
+  {"code": "asm", "name": "Assamese"},
+  {"code": "arg", "name": "Aragonés"}
+]

@@ -1,0 +1,25 @@
+#EXTM3U @LaQuay https://github.com/LaQuay/TDTChannels
+#EXTM3U url-tvg="https://www.tdtchannels.com/epg/TV.xml.gz"
+#EXTINF:-1 tvg-id="La1.TV" tvg-logo="https://example.test/la1.png" group-title="Generalistas" tvg-name="La 1",La 1
+https://example.test/la1/main.m3u8
+#EXTINF:-1 tvg-id="La1.TV" tvg-logo="https://example.test/la1.png" group-title="Generalistas" tvg-name="La 1",La 1
+https://example.test/la1/backup.m3u8
+#EXTINF:-1 tvg-logo="https://example.test/24h.png" group-title="Informativos" tvg-name="24h",24h
+#EXTVLCOPT:http-referrer=https://player.example.test/?id=7&auto=1
+#EXTVLCOPT:http-user-agent=Mozilla/5.0 (X11; Linux x86_64) TestAgent/1.0
+https://example.test/24h/index.m3u8
+#EXTINF:-1 tvg-id="Local.TV" tvg-logo="https://example.test/local.png" group-title="Locales",Canal Local, S.A.
+https://example.test/local/index.m3u8
+#EXTINF:-1 tvg-id="Sur.TV" group-title="Locales" tvg-name="Canal Sur Andalucía",Canal Sur Andalucía
+#KODIPROP:inputstream.adaptive.license_type=clearkey
+#EXTGRP:Locales
+https://example.test/sur/index.m3u8
+#EXTINF:-1 group-title="Sin logo",Sin atributos
+https://example.test/sin/index.m3u8
+#EXTINF:-1 tvg-name="Sin URL",Sin URL
+#EXTINF:-1 tvg-name="YouTube",YouTube
+https://www.youtube.com/watch?v=abc123
+#EXTINF:0 tvg-name="RTMP",RTMP
+rtmp://example.test/live/stream
+#EXTINF:-1 tvg-name="Basura",Basura
+magnet:?xt=urn:btih:0000

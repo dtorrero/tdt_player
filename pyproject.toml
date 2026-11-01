@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tdt_player"
+version = "0.3.0"
+description = "Browse IPTV playlists by country/language, star channels, play them in mpv."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "tdt_player contributors" }]
+keywords = [
+  "iptv",
+  "m3u",
+  "m3u8",
+  "hls",
+  "mpv",
+  "tdtchannels",
+  "television",
+  "gui",
+  "tkinter",
+]
+# Tkinter ships with CPython and mpv is an external binary, so the application
+# itself pulls in no third-party runtime dependency.
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+tdtplayer = "tdt_player.cli:main"
+tdtplayer-gui = "tdt_player.gui:main"
+
+[tool.setuptools]
+packages = ["tdt_player"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
