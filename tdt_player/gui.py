@@ -24,6 +24,7 @@ events tell us whether the stream really started.
 from __future__ import annotations
 
 import argparse
+import os
 import queue
 import threading
 import tkinter as tk
@@ -1124,6 +1125,38 @@ class WelcomeDialog(tk.Toplevel):
             self.app.refresh_playlists(only=only)
 
 
+def apply_window_icon(window: tk.Misc) -> None:
+    """Use the packaged PNG as the window icon (Tk reads PNG, no Pillow needed).
+
+    The file sits next to this module in an installed copy and in the checkout;
+    the hicolor theme copy made by ``packaging/install.sh`` is the fallback, and a
+    missing icon is never an error.
+    """
+    candidates = [Path(__file__).with_name("tdtplayer.png")]
+    data_home = os.environ.get("XDG_DATA_HOME") or str(Path.home() / ".local" / "share")
+    theme = Path(data_home) / "icons" / "hicolor"
+    for size in (256, 128, 64, 48, 32, 24, 16):
+        candidates.append(theme / f"{size}x{size}" / "apps" / "tdtplayer.png")
+
+    for candidate in candidates:
+        try:
+            image = tk.PhotoImage(file=str(candidate))
+        except (tk.TclError, OSError):
+            continue
+        try:
+            window.iconphoto(True, image)
+        except tk.TclError:  # pragma: no cover - window without a WM
+            return
+        # Tk does not own the image: keep it alive for as long as the window.
+        window._icon_image = image  # noqa: SLF001 - the window holds the only reference
+        break
+
+    try:
+        window.iconname("tdtplayer")
+    except tk.TclError:  # pragma: no cover
+        pass
+
+
 class App(tk.Tk):
     """The application window: filters, channel table and status bar.
 
@@ -1142,7 +1175,9 @@ class App(tk.Tk):
         catalogue_loader: Optional[Callable[..., Any]] = None,
         catalogue_probes_loader: Optional[Callable[[], Dict[str, bool]]] = None,
     ) -> None:
-        super().__init__()
+        # className "tdt_player" is the WM_CLASS the desktop entry's
+        # StartupWMClass matches, so the task bar groups and icons the window.
+        super().__init__(className="tdt_player")
 
         self.library = library if library is not None else store.load()
         self.loader = loader
@@ -1173,6 +1208,7 @@ class App(tk.Tk):
         self.player = player
 
         self.title(TITLE)
+        apply_window_icon(self)
         self.geometry(self.library.setting("geometry", "") or "1020x660")
         self.minsize(820, 460)
         self._build_widgets()

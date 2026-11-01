@@ -1,0 +1,29 @@
+# tdt_player launcher.
+#
+# This file is a TEMPLATE: packaging/install.sh substitutes @EXEC@ with the
+# absolute path of the launcher it writes (normally ~/.local/bin/tdtplayer) and
+# copies the result to ~/.local/share/applications/tdtplayer.desktop, together
+# with the icon in the hicolor theme. Run ./packaging/install.sh (no root
+# needed).
+#
+# The launcher runs `python3 -m tdt_player` on an installed copy of the package,
+# so neither pip nor a console script is required - Manjaro's Python is
+# externally managed and pip would refuse to install into it.
+#
+# StartupWMClass matches the Tk window class (the App builds it with
+# className="tdt_player"), so the task bar groups the window under this launcher
+# and shows the right icon.
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=tdt_player
+GenericName=IPTV channel player
+Comment=Browse IPTV playlists by country or language and play the channels in mpv
+Exec=@EXEC@
+TryExec=@EXEC@
+Icon=tdtplayer
+Terminal=false
+Categories=AudioVideo;Video;Player;TV;
+Keywords=iptv;tv;m3u;m3u8;hls;mpv;tdtchannels;iptv-org;channels;player;
+StartupNotify=true
+StartupWMClass=tdt_player

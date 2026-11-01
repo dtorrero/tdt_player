@@ -55,17 +55,57 @@ cd tdt_player
 python -m tdt_player            # the window
 ```
 
-Or install it, which puts `tdtplayer` and `tdtplayer-gui` on your `PATH`:
-
-```bash
-pip install --user -e .
-tdtplayer
-```
+Or run it from the checkout, which needs nothing installed at all. Manjaro's
+Python is *externally managed*, so `pip install --user` refuses to run and
+`pip install -e .` needs a virtualenv; the `packaging/install.sh` below is the
+supported way to get `tdtplayer` on your `PATH` and into the KDE menu.
 
 On the first run the window is empty: a small **welcome wizard** asks which
 countries or languages you want, adds those IPTV-org playlists and downloads
 them (TDTChannels is configured already and is fetched too). You can skip it and
 do the same later under **Playlists… → Browse catalogue…**, or from the CLI.
+
+## Install on Manjaro / KDE
+
+The script in `packaging/` installs the app for your user **without root and
+without pip** (Manjaro's Python is externally managed, so pip would refuse):
+
+```bash
+./packaging/install.sh
+```
+
+It writes:
+
+| What | Where |
+|---|---|
+| the command, also on your `PATH` | `~/.local/bin/tdtplayer` |
+| a copy of the package | `~/.local/share/tdtplayer/tdt_player/` |
+| the KDE menu entry (**Audio & Video → Players**) | `~/.local/share/applications/tdtplayer.desktop` |
+| the icon, at every menu/panel size | `~/.local/share/icons/hicolor/<size>x<size>/apps/tdtplayer.png` (512 → 16 px) |
+
+and then refreshes the desktop and icon caches (`update-desktop-database`,
+`gtk-update-icon-cache`, `kbuildsycoca6`) so the entry shows up immediately.
+Because the package is *copied*, the menu entry keeps working if you move or
+delete this checkout. The requirements are checked first: `python3` with
+`tkinter` (`sudo pacman -S tk`) and `mpv` (`sudo pacman -S mpv`); `yt-dlp` is
+suggested, not required.
+
+```bash
+./packaging/install.sh --checkout      # run this checkout instead of copying it
+./packaging/install.sh --prefix DIR    # install under DIR (e.g. /usr/local with sudo)
+./packaging/install.sh --uninstall     # launcher, entry, icon and the copy
+./packaging/install.sh --uninstall --purge   # …plus the channels and settings
+```
+
+After installing, `tdtplayer` works from any shell, and the launcher appears in
+the application menu as **tdt_player** (change it: right-click → *Edit
+Application…*). If the menu looks unchanged, run `kbuildsycoca6` once (Plasma 5:
+`kbuildsycoca5`); a panel that keeps an old icon needs
+`kquitapp6 plasmashell && plasmashell --no-respawn`.
+
+`--uninstall` never touches this checkout or your channel library (`--purge` also
+removes the channels and settings), and the icon can be redrawn at any time with
+`python3 packaging/make_icon.py`.
 
 ## The window
 
@@ -344,7 +384,7 @@ retries mirrors and reports mpv's own error instead of pretending it plays.
 
 ```bash
 pip install --user -e '.[dev]'   # pytest only; the app itself needs nothing
-python -m pytest -q              # 193 tests, no network, no mpv
+python -m pytest -q              # 199 tests, no network, no mpv
 ```
 
 The suite covers the parser against a deliberately nasty fixture (two `#EXTM3U`
@@ -370,7 +410,12 @@ tdt_player/
 ├── search.py       accent-insensitive, multi-token filtering
 ├── player.py       mpv command line, IPC player, mirror fallback
 ├── cli.py          argparse CLI (gui/list/play/favourite/import/refresh/sources/catalogue)
-└── gui.py          tkinter window (+ dialogs, switcher and the first-run wizard)
+├── gui.py          tkinter window (+ dialogs, switcher and the first-run wizard)
+└── tdtplayer.png   the icon (KDE menu and window), from packaging/make_icon.py
+packaging/
+├── install.sh      user installer: launcher, menu entry, hicolor icons
+├── tdtplayer.desktop  the launcher template install.sh fills in
+└── make_icon.py    draws tdt_player/tdtplayer.png
 ```
 
 ## Limitations
