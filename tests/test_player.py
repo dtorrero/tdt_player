@@ -398,6 +398,52 @@ def test_stop_sends_quit_and_closes_the_socket():
     assert player.drain() == []
 
 
+def test_detach_leaves_mpv_running_and_lets_it_finish_on_its_own():
+    player, ipc, _ = ipc_player()
+    player.play(channel_with("https://example.test/a"))
+    player.drain()  # consume the "started" event
+
+    player.detach()
+
+    # It lets go without closing the player down...
+    assert ("quit",) not in ipc.commands
+    # ...and asks mpv to close its window once the stream ends.
+    assert ("set_property", "idle", "no") in ipc.commands
+    assert ipc.closed is True
+    assert player.ipc_active is False
+    assert player.running is False
+    # Nothing else is reported: the player is no longer ours.
+    assert player.drain() == []
+
+
+def test_detach_does_not_terminate_a_spawned_mpv():
+    process = BlockingProcess()
+    player = playback.Player(spawn=lambda command, log: process, log_path=LOG)
+
+    assert player.play(channel_with("https://example.test/a")) is True
+
+    deadline = time.monotonic() + 5
+    while not player.running and time.monotonic() < deadline:
+        time.sleep(0.01)
+    assert player.running is True
+
+    player.detach()
+
+    assert process.terminated is False
+    assert process.killed is False
+    assert player.running is False
+
+    process.released.set()  # the detached mpv exits on its own later
+    assert player.wait(5) is True
+    assert [event["kind"] for event in player.drain()] == ["started"]
+
+
+def test_detach_without_a_player_is_harmless():
+    player = playback.Player(spawn=lambda command, log: FakeProcess(0), log_path=LOG)
+    player.detach()  # nothing was ever started
+    assert player.ipc_active is False
+
+
 def test_ipc_mpv_closing_behind_our_back_is_reported():
     player, _ipc, _ = ipc_player()
     player.play(channel_with("https://example.test/a"))

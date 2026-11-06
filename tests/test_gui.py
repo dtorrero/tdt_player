@@ -42,6 +42,9 @@ class FakePlayer:
     def stop(self):
         self.calls.append(("stop",))
 
+    def detach(self):
+        self.calls.append(("detach",))
+
     def drain(self):
         events, self.events = self.events, []
         return events
@@ -463,6 +466,35 @@ def test_closing_saves_the_session(app):
     assert stored.settings["last_playlist_filter"] == "IPTV-org Spain"
     assert stored.settings["favourites_only"] is True
     assert stored.settings["geometry"]
+
+
+def test_closing_leaves_the_player_open_by_default(app, fake_player):
+    app._on_close()
+
+    assert ("detach",) in fake_player.calls
+    assert ("stop",) not in fake_player.calls
+    assert store.load(app.library.path).settings["keep_player_open"] is True
+
+
+def test_closing_stops_the_player_when_the_box_is_off(app, fake_player):
+    app.keep_player_var.set(False)
+
+    app._on_close()
+
+    assert ("stop",) in fake_player.calls
+    assert ("detach",) not in fake_player.calls
+    assert store.load(app.library.path).settings["keep_player_open"] is False
+
+
+def test_keep_player_open_is_read_from_the_config(library, fake_player):
+    library.settings["keep_player_open"] = False
+
+    window = gui.App(library=library, player=fake_player)
+    window.withdraw()
+    try:
+        assert window.keep_player_var.get() is False
+    finally:
+        window.destroy()
 
 
 # -- the catalogue (countries / languages) ----------------------------------

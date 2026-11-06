@@ -1400,6 +1400,15 @@ class App(tk.Tk):
         self.progress = ttk.Progressbar(status, mode="indeterminate", length=110)
         self.progress.grid(row=0, column=2, padx=(8, 0))
         self.progress.grid_remove()
+        self.keep_player_var = tk.BooleanVar(
+            value=bool(self.library.setting("keep_player_open", True))
+        )
+        self.keep_player_box = ttk.Checkbutton(
+            status,
+            text="Keep player open",
+            variable=self.keep_player_var,
+        )
+        self.keep_player_box.grid(row=0, column=3, padx=(12, 0))
 
         for sequence, callback in (
             ("<Control-f>", lambda _event: self._focus_search()),
@@ -1866,8 +1875,14 @@ class App(tk.Tk):
         self.library.settings["last_filter"] = self.search_var.get()
         self.library.settings["last_playlist_filter"] = self.playlist_var.get()
         self.library.settings["favourites_only"] = bool(self.favourites_var.get())
+        keep_open = bool(self.keep_player_var.get())
+        self.library.settings["keep_player_open"] = keep_open
         try:
-            self.player.stop()
+            # mpv runs in its own session: it can outlive this window.
+            if keep_open:
+                self.player.detach()
+            else:
+                self.player.stop()
         except Exception:  # noqa: BLE001 - closing must never raise
             pass
         self.save_library()

@@ -56,6 +56,8 @@ def default_settings() -> Dict[str, Any]:
         "last_filter": "",
         "last_playlist_filter": "",
         "favourites_only": False,
+        #: whether closing the window leaves the mpv player running
+        "keep_player_open": True,
         #: welcome-wizard state so an empty library only asks once
         "welcome_done": False,
         "geometry": "",

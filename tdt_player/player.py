@@ -18,6 +18,11 @@ not (dead host, HTTP 404, geo-block), and both are forwarded to the GUI.  When
 the socket cannot be used at all, the player falls back to spawning one mpv per
 channel, exactly like version 0.1 did.
 
+mpv is started in its own session, so it owes nothing to the app that launched
+it: :meth:`Player.detach` lets go of it without asking it to quit (that is what
+the window does when it closes with *Keep player open* ticked), and
+:meth:`Player.stop` is the one that really closes the player down.
+
 mpv does not understand ``#EXTVLCOPT``, so the referrer/user-agent an entry asked
 for are translated into ``--referrer=``/``--user-agent=`` flags (or, while
 switching, into ``set_property`` commands).  mpv's own default user agent
@@ -470,6 +475,23 @@ class Player:
 
     def stop(self) -> None:
         """Stop playing: quit mpv, drop the socket and forget the state."""
+        self._release(quit_mpv=True)
+
+    def detach(self) -> None:
+        """Leave mpv running on its own and forget about it.
+
+        The window calls this when it closes with *Keep player open* enabled:
+        the socket is closed and the player is handed over to the session (it
+        was started with ``start_new_session=True``, so nothing ties it to this
+        process), but it is neither told to quit nor terminated, so its window
+        keeps playing.  ``idle`` is switched off first, so the detached player
+        closes itself when the stream ends instead of lingering as an empty
+        black window.
+        """
+        self._release(quit_mpv=False)
+
+    def _release(self, *, quit_mpv: bool) -> None:
+        """Forget the current player, actually quitting mpv only on request."""
         with self._lock:
             self._run_id += 1
             process = self._process
@@ -485,8 +507,12 @@ class Player:
 
         if connection is not None:
             try:
-                connection.command("quit")
-            except Exception:  # noqa: BLE001 - shutting down must never raise
+                if quit_mpv:
+                    connection.command("quit")
+                else:
+                    # Let mpv exit by itself once the current file ends.
+                    connection.command("set_property", "idle", "no")
+            except Exception:  # noqa: BLE001 - letting go must never raise
                 pass
             try:
                 connection.close()
@@ -494,21 +520,37 @@ class Player:
                 pass
 
         if process is not None:
-            if connection is not None:
-                # mpv was asked to quit: give it a moment to close its window.
-                self._wait_for_exit(process, 1.0)
-                if not self._has_exited(process):
+            if quit_mpv:
+                if connection is not None:
+                    # mpv was asked to quit: give it a moment to close its window.
+                    self._wait_for_exit(process, 1.0)
+                    if not self._has_exited(process):
+                        self._terminate(process)
+                else:
                     self._terminate(process)
             else:
-                self._terminate(process)
+                self._reap_later(process)
 
         path = self._ipc_path
         self._ipc_path = None
         if path is not None:
+            # mpv does not remove its socket on exit; it is ours to delete.
             try:
                 Path(path).unlink()
             except OSError:
                 pass
+
+    @staticmethod
+    def _reap_later(process: Any) -> None:
+        """Collect a detached mpv in the background so it cannot become a zombie."""
+
+        def reap() -> None:
+            try:
+                process.wait()
+            except Exception:  # noqa: BLE001 - the player is no longer ours to mind
+                pass
+
+        threading.Thread(target=reap, name="tdt-player-reap", daemon=True).start()
 
     def wait(self, timeout: Optional[float] = None) -> bool:
         """Join the spawn-mode worker thread; ``True`` when it has finished."""

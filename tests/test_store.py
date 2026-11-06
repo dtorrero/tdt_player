@@ -24,6 +24,7 @@ def test_missing_file_gives_an_empty_library(tmp_path):
     assert [playlist.id for playlist in library.playlists] == ["tdtchannels"]
     assert library.playlists[0].url == store.DEFAULT_LIST_URL
     assert library.settings["mpv_path"] == "mpv"
+    assert library.settings["keep_player_open"] is True
     assert "list_url" not in library.settings
 
 

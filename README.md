@@ -119,7 +119,7 @@ removes the channels and settings), and the icon can be redrawn at any time with
 │ │ ★ │ La 1                   │ Generalistas │ TDTChannels               │ │
 │ │   │ 3CatInfo (1080p)       │ News, Public │ IPTV-org Spain            │ │
 │ └──────────────────────────────────────────────────────────────────────┘ │
-│ <last message or error>                       332 channels · 332 shown   │
+│ <status message>            332 channels · 332 shown   ☑ Keep player open │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -131,6 +131,12 @@ removes the channels and settings), and the icon can be redrawn at any time with
   its number of mirrors are mirrored in the window title.
 * **Play** (or double-click, or `Enter`) hands the selected channel to mpv.
   **Next source** starts at the second mirror, for a dead first one.
+* Closing the window leaves mpv running, so you can keep watching while the
+  app is gone: the player was started in its own session, and closing only
+  disconnects from it (`idle` is switched off first, so the player closes its
+  own window when the stream ends). Untick **Keep player open** in the status
+  bar — on by default, remembered in `config.json` — and closing the window
+  quits the player too. **Stop**, as always, quits it immediately.
 * **Refresh all** downloads every enabled playlist, one after the other, and
   reports what each one did. **Playlists…** manages them.
 * **Add… / Edit… / Remove** maintain your own channels. Editing keeps a channel's
@@ -284,6 +290,7 @@ the examples above stay out of your real config).
     "last_filter": "",
     "last_playlist_filter": "",
     "favourites_only": false,
+    "keep_player_open": true,
     "geometry": "1020x660"
   },
   "playlists": [
@@ -384,7 +391,7 @@ retries mirrors and reports mpv's own error instead of pretending it plays.
 
 ```bash
 pip install --user -e '.[dev]'   # pytest only; the app itself needs nothing
-python -m pytest -q              # 199 tests, no network, no mpv
+python -m pytest -q              # 205 tests, no network, no mpv
 ```
 
 The suite covers the parser against a deliberately nasty fixture (two `#EXTM3U`
