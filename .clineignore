@@ -1,0 +1,51 @@
+# Keep the Cline agent out of noise, deps, caches, media and secrets.
+# Smaller context = fewer mistakes, especially when approving from a phone.
+
+# Virtualenvs / deps
+.venv/
+venv/
+env/
+node_modules/
+.npm/
+
+# Python caches / build
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Media / binaries the agent shouldn't read
+*.png
+*.PNG
+*.jpg
+*.jpeg
+*.gif
+*.mp4
+*.mkv
+*.flac
+*.mp3
+*.zip
+*.tar
+*.gz
+
+# Secrets — never read or print
+.env
+.env.*
+*.transmission-credentials.json
+*.pem
+*.key
+id_rsa
+id_ed25519
+**/secrets/**
+
+# VCS noise
+.git/
+.git/**

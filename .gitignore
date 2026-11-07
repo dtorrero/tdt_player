@@ -5,3 +5,29 @@ build/
 dist/
 .pytest_cache/
 .venv/
+
+# --- adopted from remoteCline base (agent workflow) ---
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+!.vscode/settings.json
+# secrets — never commit
+.env
+.env.*
+!.env.example
+*.transmission-credentials.json
+*.pem
+*.key
+id_rsa
+id_ed25519
+# Kanban / Cline worktrees
+.worktrees/
+.cline/
