@@ -57,6 +57,22 @@ ERROR_STYLE = "Error.TLabel"
 #: Shown in the playlist column for channels the user added by hand.
 MANUAL_LABEL = "manual"
 
+# A TV-guide look for the channel table: a dark header band, taller rows,
+# alternating row colours and a highlight for the channel that is playing.
+GUIDE_STYLE = "Guide.Treeview"
+GUIDE_ROW_HEIGHT = 26
+GUIDE_EVEN_BG = "#ffffff"
+GUIDE_ODD_BG = "#eef2f8"
+GUIDE_PLAYING_BG = "#bcdcff"
+GUIDE_PLAYING_FG = "#00316b"
+GUIDE_HEADING_BG = "#1f2d3d"
+GUIDE_HEADING_FG = "#ffffff"
+
+#: Tags used to paint the rows (alternating bands and the playing channel).
+EVEN_TAG = "even"
+ODD_TAG = "odd"
+PLAYING_TAG = "playing"
+
 
 class ChannelDialog(tk.Toplevel):
     """Add/edit form; :attr:`result` holds the channel once *Save* is pressed."""
@@ -1188,6 +1204,7 @@ class App(tk.Tk):
         self._events: "queue.Queue[Dict[str, Any]]" = queue.Queue()
         self._index: Dict[str, Channel] = {}
         self._visible: List[Channel] = []
+        self._channel_numbers: Dict[str, int] = {}
         self._playlist_index: Dict[str, Playlist] = {}
         self._filter_job: Optional[str] = None
         self._busy = False
@@ -1237,6 +1254,16 @@ class App(tk.Tk):
 
         style = ttk.Style(self)
         style.configure(ERROR_STYLE, foreground="#b00020")
+        # TV-guide styling: a dark header band and taller rows for the table.
+        style.configure(GUIDE_STYLE, rowheight=GUIDE_ROW_HEIGHT)
+        style.configure(
+            f"{GUIDE_STYLE}.Heading",
+            background=GUIDE_HEADING_BG,
+            foreground=GUIDE_HEADING_FG,
+            font=("TkDefaultFont", 10, "bold"),
+            relief="flat",
+            padding=(6, 4),
+        )
 
         top = ttk.Frame(self, padding=(8, 8, 8, 0))
         top.grid(row=0, column=0, sticky="ew")
@@ -1343,18 +1370,30 @@ class App(tk.Tk):
         table.columnconfigure(0, weight=1)
         table.rowconfigure(0, weight=1)
 
-        columns = ("star", "name", "group", "playlist")
+        columns = ("num", "star", "name", "group", "playlist")
         self.tree = ttk.Treeview(
-            table, columns=columns, show="headings", selectmode="browse"
+            table,
+            columns=columns,
+            show="headings",
+            selectmode="browse",
+            style=GUIDE_STYLE,
         )
+        self.tree.heading("num", text="#")
         self.tree.heading("star", text="★")
         self.tree.heading("name", text="Channel")
         self.tree.heading("group", text="Group")
         self.tree.heading("playlist", text="Playlist")
+        self.tree.column("num", width=44, stretch=False, anchor="center")
         self.tree.column("star", width=34, stretch=False, anchor="center")
-        self.tree.column("name", width=400, stretch=True, anchor="w")
-        self.tree.column("group", width=250, stretch=True, anchor="w")
-        self.tree.column("playlist", width=200, stretch=False, anchor="w")
+        self.tree.column("name", width=360, stretch=True, anchor="w")
+        self.tree.column("group", width=220, stretch=True, anchor="w")
+        self.tree.column("playlist", width=180, stretch=False, anchor="w")
+        # Alternating row bands plus a highlight for the channel being played.
+        self.tree.tag_configure(EVEN_TAG, background=GUIDE_EVEN_BG)
+        self.tree.tag_configure(ODD_TAG, background=GUIDE_ODD_BG)
+        self.tree.tag_configure(
+            PLAYING_TAG, background=GUIDE_PLAYING_BG, foreground=GUIDE_PLAYING_FG
+        )
         scrollbar = ttk.Scrollbar(table, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar.set)
         self.tree.grid(row=0, column=0, sticky="nsew")
@@ -1476,6 +1515,13 @@ class App(tk.Tk):
             favourites_only=self.favourites_var.get(),
         )
 
+        # Channel numbers follow the library order, so they stay put while the
+        # table is filtered — like the fixed numbering of a printed TV guide.
+        self._channel_numbers = {
+            channel.id: position
+            for position, channel in enumerate(self.library.channels, start=1)
+        }
+
         self.tree.delete(*self.tree.get_children())
         for channel in self._visible:
             self.tree.insert(
@@ -1483,12 +1529,15 @@ class App(tk.Tk):
                 "end",
                 iid=channel.id,
                 values=(
+                    self._channel_numbers.get(channel.id, ""),
                     "★" if channel.favourite else "",
                     channel.name,
                     channel.group_label,
                     ", ".join(self._playlist_names(channel)),
                 ),
             )
+
+        self._apply_row_style()
 
         if previous is not None and self.tree.exists(previous.id):
             self.tree.selection_set(previous.id)
@@ -1506,6 +1555,19 @@ class App(tk.Tk):
                 "No channels yet — press “Refresh all”, or add feeds under "
                 "“Playlists…” → “Browse catalogue…”"
             )
+
+    def _apply_row_style(self) -> None:
+        """Zebra-stripe the rows and highlight the channel that is playing."""
+        playing_id = self._playing_channel.id if self._playing_channel is not None else None
+        for position, iid in enumerate(self.tree.get_children()):
+            number = str(self._channel_numbers.get(iid, ""))
+            if iid == playing_id:
+                tags = (PLAYING_TAG,)
+                self.tree.set(iid, "num", f"▶ {number}")
+            else:
+                tags = (ODD_TAG,) if position % 2 else (EVEN_TAG,)
+                self.tree.set(iid, "num", number)
+            self.tree.item(iid, tags=tags)
 
     def _focus_search(self) -> None:
         self.search_entry.focus_set()
@@ -1579,6 +1641,7 @@ class App(tk.Tk):
             self.set_status(f"{channel.name} has no stream URL", error=True)
             return
         self._playing_channel = channel
+        self._apply_row_style()
         self.set_status(f"Starting {channel.name} …")
 
     def _play_selected(self, next_source: bool = False) -> None:
@@ -1591,6 +1654,7 @@ class App(tk.Tk):
     def _stop_player(self) -> None:
         self.player.stop()
         self._playing_channel = None
+        self._apply_row_style()
         self.set_status("Stopped")
 
     def _copy_url(self) -> None:
@@ -1676,11 +1740,13 @@ class App(tk.Tk):
                 self.set_status(f"Trying {name}{suffix} …")
             elif kind == "loaded":
                 self._playing_channel = channel if isinstance(channel, Channel) else None
+                self._apply_row_style()
                 self.set_status(f"Playing {name}")
             elif kind == "source-failed":
                 self.set_status(f"{name}: that source failed, trying the next one …")
             elif kind == "finished":
                 self._playing_channel = None
+                self._apply_row_style()
                 self.set_status(f"{name} finished")
             elif kind == "failed":
                 self.set_status(

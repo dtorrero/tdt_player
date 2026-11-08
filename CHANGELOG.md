@@ -11,3 +11,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) +
   `.clinerules/`, `.clineignore`, `.editorconfig`, `.pre-commit-config.yaml`,
   a `Makefile`, ruff config in `pyproject.toml`, and git-ignore hygiene for
   secrets/caches/worktrees.
+
+### Changed
+- Gave the channel table a **TV-guide look**: a dark bold header band, taller
+  rows, alternating row colours, a fixed `#` channel-number column that follows
+  the library order, and a highlighted row with a `▶` marker for the channel
+  that is currently playing.

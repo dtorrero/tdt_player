@@ -135,6 +135,29 @@ def test_rows_and_columns(app):
     assert app.tree.set(first, "playlist") == "TDTChannels"
 
 
+def test_channel_rows_are_numbered_and_zebra_striped(app):
+    rows = app.tree.get_children()
+    # Channel numbers follow the library order, like a printed TV guide.
+    assert [app.tree.set(row, "num") for row in rows] == ["1", "2", "3", "4"]
+    # Adjacent rows carry different background tags (alternating bands).
+    first_tags = app.tree.item(rows[0], "tags")
+    second_tags = app.tree.item(rows[1], "tags")
+    assert first_tags and second_tags
+    assert first_tags != second_tags
+
+
+def test_playing_channel_is_highlighted_until_it_stops(app):
+    channel = app.library.channels[2]  # 24h, channel number 3
+    app._select(channel.id)
+    app.play_channel(channel)
+    assert app.tree.item(channel.id, "tags") == (gui.PLAYING_TAG,)
+    assert app.tree.set(channel.id, "num").startswith("▶")
+
+    app._stop_player()
+    assert gui.PLAYING_TAG not in app.tree.item(channel.id, "tags")
+    assert app.tree.set(channel.id, "num") == "3"
+
+
 def test_playlist_column_lists_every_source(app):
     rows = {app.tree.set(row, "name"): row for row in app.tree.get_children()}
     assert app.tree.set(rows["24h"], "playlist") == "TDTChannels, IPTV-org Spain"

@@ -1,4 +1,3 @@
-# tdt_player
 
 A small desktop app to **browse several IPTV playlists, star channels and play
 them in `mpv`**.
@@ -115,14 +114,20 @@ removes the channels and settings), and the icon can be redrawn at any time with
 │ [Play] [Next source] [Stop] │ [★ Favourite] [Switcher…] │ [Add…] [Edit…] [Remove] │
 │                                        [Refresh all] [Playlists…]        │
 │ ┌──────────────────────────────────────────────────────────────────────┐ │
-│ │ ★ │ Channel                │ Group        │ Playlist                  │ │
-│ │ ★ │ La 1                   │ Generalistas │ TDTChannels               │ │
-│ │   │ 3CatInfo (1080p)       │ News, Public │ IPTV-org Spain            │ │
+│ │ # │ ★ │ Channel              │ Group        │ Playlist                │ │
+│ │ 1 │ ★ │ La 1                 │ Generalistas │ TDTChannels             │ │
+│ │ 2 │   │ La 2                 │ Generalistas │ TDTChannels             │ │
+│ │ 3 │ ★ │ 3CatInfo (1080p)     │ News, Public │ IPTV-org Spain          │ │
+│ │ 4 │ ▶ │ 24h                  │ Informativos │ TDTChannels             │ │  ← playing
 │ └──────────────────────────────────────────────────────────────────────┘ │
 │ <status message>            332 channels · 332 shown   ☑ Keep player open │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
+* The table is laid out **like a TV guide**: a dark header band, taller rows,
+  alternating band colours and a fixed **#** channel number that follows the
+  library order (so it stays put while you filter). The channel that is playing
+  is highlighted, with a **▶** marker in its number cell.
 * **Search**, **Group** and **Playlist** combine (`canal` + `Locales` + one
   playlist), and `★ only` keeps the favourites. Accents and case are ignored;
   IPTV-org's multi-groups (`News;Public`) match either group.
